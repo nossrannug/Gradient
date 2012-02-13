@@ -1,15 +1,15 @@
 from twisted.internet import protocol, reactor
 import threading
 
-class ClientContent(threding.Thread):
+class ClientContent(threading.Thread):
 	def __init__(self, connectTo):
 		self.connectTo = connectTo
 		threading.Thread.__init__(self)
 
 	def run(self):
 		# If connectTo not empty we want to connect to that host
-		if connectTo != None:
-			reactor.connectTCP(connectTo['ip'], connectTo['port'], ClientSendReceiveFactory())
+		if self.connectTo != None:
+			reactor.connectTCP(self.connectTo['ip'], self.connectTo['port'], ClientSendReceiveFactory())
 		# We also want to be listening for incoming connections	
 		reacotor.listenTCP('1234', self.factory)
 		reactor.run()

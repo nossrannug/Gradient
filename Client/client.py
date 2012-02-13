@@ -1,7 +1,7 @@
 from twisted.internet import protocol, reactor
 import os
 import pickle
-import clientcontent
+from clientcontent import ClientContent
 
 class Client(protocol.Protocol):
     STATE_INITIAL = 1
