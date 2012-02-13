@@ -56,6 +56,15 @@ class Bootstrap(protocol.Protocol):
 		self.content[self.clients[c]['interests']] = []
 		self.content[self.clients[c]['interests']].append([self.transport.getPeer().host, self.clients[c]['inport']])
 		print self.content
+	elif data[0] == "R":
+		# Traceroute results from client
+		obj = self.recvPickle(data)
+		# XXX
+		# Add information to the graph
+		# Construct tree from graph
+		# Send information to client on where to connect to
+		# connectTo = { 'ip' : ipAddress, 'port' : thePortNumber }
+		# self.makeConnection(connectTo)
 	else:
 		self.transport.write("TNo such command\n")
 		
