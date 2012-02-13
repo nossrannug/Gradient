@@ -1,0 +1,31 @@
+In this prototype all data being sent between client and bootstrap are strings
+All objects will be pickled -> sent -> unpicled
+The strings will start with a letter to indicate what is being received.
+
+The Gradient Protocol:
+
+T - Text
+    Used be the bootstrap to inform the client that command was received
+
+N - New node contains information about self. 
+    Will be a dictionary containing the following items:
+    - inport
+    - pid
+    - rate
+    
+C - Content
+    Will be a dictionary containing the following:
+    - interests -> list of items what are being requested
+    
+
+G - Request list of nodes providing requested content
+
+L - List of nodes providing requested content (response for 'G')
+
+R - Traceroute results
+    After getting list of nodes for requested content, the client runs traceroute
+    on  the nodes and sends the result back to bootstrap so that weights can be
+    assigned to the edges of the graph.
+
+O - Offer requested content
+

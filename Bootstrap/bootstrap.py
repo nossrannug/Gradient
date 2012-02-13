@@ -4,6 +4,7 @@ import pickle
 class Bootstrap(protocol.Protocol):
     def __init__(self):
         self.clients = {}
+	self.content = {}
 
     def connectionMade(self):
         print "connection from: ", self.transport.getPeer().host
@@ -29,7 +30,7 @@ class Bootstrap(protocol.Protocol):
    
     def sendNodes(self, c):
 	# Send a list of relevant nodes to a particular client
-	self.sendPickle('L', [ "192.168.1.1", "192.168.1.2" ])
+	self.sendPickle('L', self.content)
  
     def dataReceived(self, data):
         #self.transport.write(data)
@@ -49,9 +50,12 @@ class Bootstrap(protocol.Protocol):
 		self.clients[c]['interests'] = obj['interests']
 		print "Interests: ", self.clients[c]['interests']
 	elif data[0] == "G":
-		obj = self.recvPickle(data)
 		# Client wants a list of nodes
 		self.sendNodes (c)	
+	elif data[0] == "O":
+		self.content[self.clients[c]['interests']] = []
+		self.content[self.clients[c]['interests']].append([self.transport.getPeer().host, self.clients[c]['inport']])
+		print self.content
 	else:
 		self.transport.write("TNo such command\n")
 		
