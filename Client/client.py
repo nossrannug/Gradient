@@ -1,6 +1,7 @@
 from twisted.internet import protocol, reactor
 import os
 import pickle
+import clientcontent
 
 class Client(protocol.Protocol):
     STATE_INITIAL = 1
@@ -38,6 +39,11 @@ class Client(protocol.Protocol):
 
     def sendTracerouteResult(self, result):
 	self.sendPickle('R', result)	
+
+    # Havn't tested if this works or not
+    def makeConnection(self, connectTo):
+	self.ClientThread = ClientContent(connectTo)
+	self.ClientThread.start()
 
     def sendPickle(self, cmd, data):
 	self.transport.write("%c%s" % (cmd, pickle.dumps(data)))
