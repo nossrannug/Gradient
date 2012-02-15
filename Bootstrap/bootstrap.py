@@ -6,6 +6,7 @@ class Bootstrap(protocol.Protocol):
         self.clients = {}
 	self.content = {}
 
+
     def connectionMade(self):
         print "connection from: ", self.transport.getPeer().host
         #self.clients.append(self.transport.getPeer().host)
@@ -14,31 +15,40 @@ class Bootstrap(protocol.Protocol):
 
     ### XXX hvad ef tengingin slitnar?
 
+
     def sendPickle(self, cmd, data):
 	self.transport.write ("%c%s" % (cmd, pickle.dumps(data)))
+
 
     def recvPickle(self, data):
 	try:
 		obj = pickle.loads(data[1:])
-		print obj
 		self.transport.write("TACK\n")
 		return obj
 	except:
 		print "Error parsing pickle command"
 		self.transport.write("TERR\n")
 		return None
+
    
     def sendNodes(self, c):
 	# Send a list of relevant nodes to a particular client
-	self.sendPickle('L', self.content)
+	nodes = []
+	try:
+		nodes = self.content[self.clients[c]['interests']]		
+	except:
+		self.content[self.clients[c]['interests']] = []
+	#print "Nodes: ", nodes
+	self.sendPickle('L', nodes)
  
+
     def dataReceived(self, data):
         #self.transport.write(data)
         #print "from: ", self.transport.getPeer().host,":",self.transport.getPeer().port, " : ", data
 	# Protocol, 'T' means text, 'P' means pickle
 	c = "%s:%d" % (self.transport.getPeer().host, self.transport.getPeer().port)
 	if data[0] == 'T': # Text
-		print data[1:]
+		print "Text: ", data[1:]
 	elif data[0] == "N":
 		obj = self.recvPickle(data)
 		# XXX error handling
@@ -51,11 +61,11 @@ class Bootstrap(protocol.Protocol):
 		print "Interests: ", self.clients[c]['interests']
 	elif data[0] == "G":
 		# Client wants a list of nodes
-		self.sendNodes (c)	
+		self.sendNodes(c)	
 	elif data[0] == "O":
 		self.content[self.clients[c]['interests']] = []
 		self.content[self.clients[c]['interests']].append([self.transport.getPeer().host, self.clients[c]['inport']])
-		print self.content
+		print "Content: ", self.content
 	elif data[0] == "R":
 		# Traceroute results from client
 		obj = self.recvPickle(data)
@@ -65,6 +75,10 @@ class Bootstrap(protocol.Protocol):
 		# Send information to client on where to connect to
 		# connectTo = { 'ip' : ipAddress, 'port' : thePortNumber }
 		# self.makeConnection(connectTo)
+
+		# For now just send the last ip that connected
+		connectTo = self.content[self.clients[c]['interests']][-1]
+		print "Connect To: ", connectTo
 	else:
 		self.transport.write("TNo such command\n")
 		

@@ -1,7 +1,7 @@
 from twisted.internet import protocol, reactor
 import os
 import pickle
-from clientcontent import ClientContent
+from clientcontent import ClientSendReceiveFactory
 
 class Client(protocol.Protocol):
     STATE_INITIAL = 1
@@ -16,7 +16,7 @@ class Client(protocol.Protocol):
 
     def sendNew(self):
 	# Protocol: Step 1: Send information about self
-	me = { "inport" : "1234", "pid" : str(os.getpid()), "rate" : 100 }
+	me = { "inport" : 1234, "pid" : str(os.getpid()), "rate" : 100 }
 	self.sendPickle('N', me)
 
     def sendContent(self):
@@ -32,6 +32,7 @@ class Client(protocol.Protocol):
 	# Protocol: Step ?: If there are no nodes offering content
 	# being offering live stream
 	self.transport.write("O")
+	self.connectToContent(None)
 
     def selfTracerouteNodes(self, nodes):
 	# traceroute nodes
@@ -41,17 +42,21 @@ class Client(protocol.Protocol):
 	self.sendPickle('R', result)	
 
     # Havn't tested if this works or not
-    def makeConnection(self, connectTo):
-	self.ClientThread = ClientContent(connectTo)
-	self.ClientThread.start()
+    def connectToContent(self, connectTo):
+	if connectTo != None:
+		reactor.connectTCP(connectTo[0], connectTo[1], ClientSendReceiveFactory())
+	else:
+		reactor.listenTCP(1234, ClientSendReceiveFactory())
 
     def sendPickle(self, cmd, data):
 	self.transport.write("%c%s" % (cmd, pickle.dumps(data)))
 
     def recvPickle(self, data):
+	#print "Data: ", data
+	#print "State: ", self.state
 	try:
 		obj = pickle.loads(data[1:])
-		print obj
+		#print obj
 		self.transport.write("TACK\n")
 		return obj
 	except:
@@ -75,24 +80,19 @@ class Client(protocol.Protocol):
 
 		print data[1:]
 	elif data[0] == 'L': ## List of nodes
-		try:
-			obj = pickle.loads(data[1:])
-			# If no one is offering said content the client will start offering it
-			# Will just be a live video stream from web cam?
-			if len(obj) == 0:
-				self.sendOfferContent()
-				self.state = STATE_SENT_O
-				# XXX: write a class to start streaming something?
-			else:
-				# XXX: Tracerout to all nodes and send result to bootstrap
-				result = self.tracerouteNodes(obj)
-				self.sendTracerouteResult(result)
-			print obj
-			# XXX: do something with the object
-			#self.transport.write("TACK\n")
-		except:
-			print "Error parsing pickle command"
-			self.transport.write("TERR\n")
+		# If no one is offering said content the client will start offering it
+		obj = self.recvPickle(data)
+		# Will just be a live video stream from web cam?
+		if len(obj) == 0:
+			self.sendOfferContent()
+			self.state = self.STATE_SENT_O
+			# XXX: write a class to start streaming something?
+		else:
+			# XXX: Tracerout to all nodes and send result to bootstrap
+			result = self.tracerouteNodes(obj)
+			self.sendTracerouteResult(result)
+		# XXX: do something with the object
+		#self.transport.write("TACK\n")
 	else:
 		self.transport.write("TUnknown response\n")
 	
@@ -103,7 +103,6 @@ class Client(protocol.Protocol):
 
 
  
-
 bootstrap = "localhost"
 bootstrapPort = 8007
 factory = protocol.ClientFactory()
