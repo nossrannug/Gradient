@@ -4,13 +4,6 @@ import pickle
 class Bootstrap(protocol.Protocol):
     def __init__(self):
 	print "-----------------------------------"
-        try:
-		print "Smidur: ", self.factory.content
-	except:
-		print "Empty."
-	#self.clients = {}
-	#self.content = {}
-
 
     def connectionMade(self):
         print "connection from: ", self.transport.getPeer().host
@@ -23,8 +16,6 @@ class Bootstrap(protocol.Protocol):
 
 
     def sendPickle(self, cmd, data):
-	if cmd == 'M':
-		print "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM"
 	self.transport.write ("%c%s" % (cmd, pickle.dumps(data)))
 
 
@@ -32,7 +23,6 @@ class Bootstrap(protocol.Protocol):
 	try:
 		obj = pickle.loads(data[1:])
 		self.transport.write("TACK\n")
-		self.transport.write("b")
 		return obj
 	except:
 		print "Error parsing pickle command"
@@ -43,16 +33,12 @@ class Bootstrap(protocol.Protocol):
     def sendNodes(self, c):
 	# Send a list of relevant nodes to a particular client
 	nodes = []
-	print "bla"
-	print "1: ", self.factory.clients[c]['interests']
-	print "2: ", self.factory.content
 	try:
 		print "Content: ", self.factory.clients[c]['interests']
 		nodes = self.factory.content[self.factory.clients[c]['interests']]		
 	except:
 		print "Content list is empty"
 		#self.content[self.clients[c]['interests']] = []
-	#print "Nodes: ", nodes
 	self.sendPickle('L', nodes)
  
     def clientConnectTo(self, connectTo):
@@ -60,8 +46,6 @@ class Bootstrap(protocol.Protocol):
 	
 
     def dataReceived(self, data):
-        #self.transport.write(data)
-        #print "from: ", self.transport.getPeer().host,":",self.transport.getPeer().port, " : ", data
 	# Protocol, 'T' means text, 'P' means pickle
 	c = "%s:%d" % (self.transport.getPeer().host, self.transport.getPeer().port)
 	if data[0] == 'T': # Text
@@ -97,10 +81,9 @@ class Bootstrap(protocol.Protocol):
 		# self.makeConnection(connectTo)
 
 		# For now just send the last ip that connected
-		self.connectTo = self.factory.content[self.factory.clients[c]['interests']][-1]
-		print "Connect To: ", self.connectTo
-	elif data[0] == 'M':	
-		self.clientConnectTo(self.connectTo)
+		connectTo = self.factory.content[self.factory.clients[c]['interests']][-1]
+		print "Connect To: ", connectTo
+		self.clientConnectTo(connectTo)
 	else:
 		self.transport.write("TNo such command\n")
 		
@@ -110,13 +93,9 @@ class BootstrapFactory(protocol.Factory):
 	def __init__(self):
 		self.content = {}
 		self.clients = {}
-		print "asdfasdfasdfasdfasdfasdfasfdds"
 
 	def buildProtocol(self, addr):
 		factory = Bootstrap()
-		print "-------------------------"
-		print "protocol factory."
-		print "-------------------------"
 		factory.factory = self 
 		return factory
 		

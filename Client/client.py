@@ -51,12 +51,15 @@ class Client(protocol.Protocol):
 
     # Havn't tested if this works or not
     def connectToContent(self, connectTo):
-	if connectTo != None:
-		print "Connecting to: ", connectTo
-		reactor.connectTCP(connectTo[0], connectTo[1], ClientSendReceiveFactory())
-	else:
+	try:
+		if connectTo != None:
+			print "Connecting to: ", connectTo
+			reactor.connectTCP(connectTo[0], connectTo[1], ClientSendReceiveFactory())
+
 		print "Listening on port: ", self.port
 		reactor.listenTCP(self.port, ClientSendReceiveFactory())
+	except:
+		print "Error connecting to or listening on port."
 
     def sendGetConnectToAddress(self):
 	self.transport.write('M')
@@ -79,7 +82,7 @@ class Client(protocol.Protocol):
 
     def dataReceived(self, data):
         self.connectTo = data
-	print data[0]
+	#print data[0]
 	# Protocol, 'T' means text, 'P' means pickle
 	if data[0] == 'T': # Text
 		if data[1:4] == "ACK": # Success
@@ -93,10 +96,15 @@ class Client(protocol.Protocol):
 			elif self.state == self.STATE_SENT_R:
 				self.state == self.STATE_SENT_M
 				self.sendGetConnectAddress()
-
-		#print data[1:]
+		if len(data[1:]) > 3 and self.state != self.STATE_SENT_O:
+			#print data[5:]
+			obj = self.recvPickle(data[5:])
+			#print "M object: ", obj
+			print "Client needs to connect to: ", obj
+			self.connectToContent(obj)
 	elif data[0] == 'L': ## List of nodes
-		# If no one is offering said content the client will start offering it
+		# If no one is offering said content 
+		# the client will start offering it
 		obj = self.recvPickle(data)
 		# Will just be a live video stream from web cam?
 		print "List: ", obj
@@ -110,10 +118,10 @@ class Client(protocol.Protocol):
 			self.sendTracerouteResult(result)
 		# XXX: do something with the object
 		#self.transport.write("TACK\n")
-	elif data[0] == 'M':
-		obj = self.recvPickle(data)
-		print "Client needs to connect to: ", obj
-		self.connectToContent(connectTo)
+	#elif data[0] == 'M':
+	#	obj = self.recvPickle(data)
+	#	print "Client needs to connect to: ", obj
+	#	self.connectToContent(connectTo)
 	else:
 		self.transport.write("TUnknown response\n")
 	
