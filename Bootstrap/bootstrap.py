@@ -14,6 +14,9 @@ class Bootstrap(protocol.Protocol):
 
     ### XXX hvad ef tengingin slitnar?
 
+    def connectionLost(self, reason):
+	c = "%s:%d" % (self.transport.getPeer().host, self.transport.getPeer().port)
+	self.factory.content[self.factory.clients[c]['interests']].remove([self.transport.getPeer().host, self.factory.clients[c]['inport']])
 
     def sendPickle(self, cmd, data):
 	self.transport.write ("%c%s" % (cmd, pickle.dumps(data)))
@@ -82,6 +85,7 @@ class Bootstrap(protocol.Protocol):
 
 		# For now just send the last ip that connected
 		connectTo = self.factory.content[self.factory.clients[c]['interests']][-1]
+		self.factory.content[self.factory.clients[c]['interests']].append([self.transport.getPeer().host, self.factory.clients[c]['inport']])
 		print "Connect To: ", connectTo
 		self.clientConnectTo(connectTo)
 	else:

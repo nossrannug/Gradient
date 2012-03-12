@@ -53,13 +53,16 @@ class Client(protocol.Protocol):
     def connectToContent(self, connectTo):
 	try:
 		if connectTo != None:
-			print "Connecting to: ", connectTo
 			reactor.connectTCP(connectTo[0], connectTo[1], ClientSendReceiveFactory())
+			print "Connection to: ", connetTo
 
-		print "Listening on port: ", self.port
-		reactor.listenTCP(self.port, ClientSendReceiveFactory())
 	except:
-		print "Error connecting to or listening on port."
+		print "Error Connecting to: ", connectTo
+	try:
+		reactor.listenTCP(self.port, ClientSendReceiveFactory())
+		print "Listening on port: ", self.port
+	except:
+		print "Error listening on port: ", self.port
 
     def sendGetConnectToAddress(self):
 	self.transport.write('M')
@@ -96,7 +99,7 @@ class Client(protocol.Protocol):
 			elif self.state == self.STATE_SENT_R:
 				self.state == self.STATE_SENT_M
 				self.sendGetConnectAddress()
-		if len(data[1:]) > 3 and self.state != self.STATE_SENT_O:
+		if len(data[1:]) > 4 and self.state != self.STATE_SENT_O:
 			#print data[5:]
 			obj = self.recvPickle(data[5:])
 			#print "M object: ", obj

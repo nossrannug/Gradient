@@ -1,7 +1,7 @@
 from twisted.internet import protocol, reactor
 
 class ClientSendReceiveFactory(protocol.Factory):
-	def __inti__(self):
+	def __init__(self):
 		self.echoers = []
 
 	def buildProtocol(self, addr):
@@ -11,7 +11,7 @@ class ClientSendReceiveFactory(protocol.Factory):
 
 
 class ClientSendReceive(protocol.Protocol):
-	def __inti__(self):
+	def __init__(self):
 		#self.factory = factory
 		pass
 	# Need to test if this is just for incoming connections
